@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Parsedown;
+use App\Models\User;
+use App\Models\Question;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Answer extends Model
 {
@@ -53,7 +55,33 @@ class Answer extends Model
 
     public function getStatusAttribute()
     {
-        return $this->id == $this->question->best_answer_id ? 'vote-accepted' : '';
+        return $this->isBest() ? 'vote-accepted' : '';
     }
 
+    
+    public function getIsBestAttribute()
+    {
+        return $this->isBest();
+
+    }
+
+    public function isBest()
+    {
+        return $this->id = $this->question->best_answer_id;
+    }
+
+    
+    public function votes()
+    {
+        return $this->morphToMany(User::class, 'votable');
+    }
+
+    
+    public function upVotes(){
+        return $this->votes()->wherePivot('vote',1);
+    }
+
+    public function downVotes(){
+        return $this->votes()->wherePivot('vote',-1);
+    }
 }
