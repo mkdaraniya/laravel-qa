@@ -5,12 +5,13 @@ namespace App\Models;
 use Parsedown;
 use App\Models\User;
 use App\Models\Question;
+use App\VotableTrait;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Answer extends Model
 {
-    use HasFactory;
+    use HasFactory, VotableTrait;
 
     protected $fillable = ['body','user_id'];
 
@@ -26,9 +27,8 @@ class Answer extends Model
 
     public function getBodyHtmlAttribute()
     {
-        return Parsedown::instance()->text($this->body);
+        return \Stevebauman\Purify\Facades\Purify::clean($this->body);
     }
-
 
     public static function boot()
     {

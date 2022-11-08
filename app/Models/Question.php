@@ -4,14 +4,17 @@ namespace App\Models;
 
 use Parsedown;
 use App\Models\User;
+use App\VotableTrait;
 use App\Models\Answer;
 use PhpParser\Builder\Function_;
+use Stevebauman\Purify\Facades\Purify;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Stevebauman\Purify\Purify as PurifyPurify;
 
 class Question extends Model
 {
-    use HasFactory;
+    use HasFactory, VotableTrait;
 
     protected $fillable = ['title','body'];
 
@@ -23,6 +26,11 @@ class Question extends Model
     {
         $this->attributes['title'] = $value;
         $this->attributes['slug'] = str_slug($value);
+    }
+
+    public function setBodyAttribute($value)
+    {
+        $this->attributes['body'] = Purify::clean($value);
     }
 
     public function getUrlAttribute()
@@ -49,7 +57,7 @@ class Question extends Model
 
     public function getBodyHtmlAttribute()
     {
-        return Parsedown::instance()->text($this->body);
+        return Purify::clean($this->bodyHtml());
     }
 
     public function answers()
@@ -83,16 +91,18 @@ class Question extends Model
         return $this->favorites->count();
     }
 
-    public function votes()
+    public function getExcerptAttribute()
     {
-        return $this->morphToMany(User::class, 'votable');
+        return $this->excerpt(250);
     }
 
-    public function upVotes(){
-        return $this->votes()->wherePivot('vote',1);
+    public function excerpt($length)
+    {
+        return str_limit(strip_tags($this->bodyHtml()), $length);
     }
 
-    public function downVotes(){
-        return $this->votes()->wherePivot('vote',-1);
+    public function bodyHtml()
+    {
+        return Parsedown::instance()->text($this->body);
     }
 }

@@ -21,9 +21,7 @@ use App\Http\Controllers\VoteQuestionCountroller;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', [QuestionsController::class,'index']);
 
 Auth::routes();
 
@@ -37,7 +35,10 @@ Route::post('/questions/{question}/answers',[App\Http\Controllers\AnswersControl
 Route::resource('questions.answers',AnswersController::class)->except(['index','create','show']);
 
 Route::get('questions/{slug}',[App\Http\Controllers\HomeController::class,function($slug){
-    $question = Question::with('answers.user')->where('slug',$slug)->first() ?? abort(404);
+    $question = Question::with(['answers.user','answers' => function($query) {
+        $query->orderBy('votes_count','desc');
+    }])->where('slug',$slug)->first() ?? abort(404);
+
     $question->increment('views');
     $question->save();
     return view('questions.show',compact('question'));
